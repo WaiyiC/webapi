@@ -139,7 +139,7 @@ let article:any = await model.deleteById(id)
 async function likesCount(ctx: RouterContext, next: any) {
   // For you TODO: add error handling and error response code
   const id = ctx.params.id;
-  const result = await likes.count(id);
+  const result = await likes.count(id); 
   ctx.body = result ? result : 0;
   await next();
 }
