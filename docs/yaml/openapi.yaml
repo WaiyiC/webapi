@@ -4,13 +4,13 @@ info:
   title: Back End Demonstration API
   description: A simple blog API.
   contact: 
-    name: 
-    email: 
+    name: Waiyi Chan
+    email: waiyi101@gmail.com
   license:
     name: Apache 2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
 servers:
-  - url: 'https://feec368b-f2cd-4c78-ba6d-d66f03597562-00-2xj5l7c94qwox.sisko.repl.co:3000/api/v1'
+  - url: 'postgres://ekvbgjpl:WzQwRrIf7vvalEfiebBAiv3wny7s0h9g@silly.db.elephantsql.com/ekvbgjpl'
     description: Development server
 tags:
   - name: Users

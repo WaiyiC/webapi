@@ -1,6 +1,6 @@
 import Router, {RouterContext} from "koa-router";
 import bodyParser from "koa-bodyparser";
-import * as model from "../models/articles";
+import * as model from "../models/dogs";
 import * as likes from "../models/likes";
 import * as favs from "../models/favs";
 import * as msgs from "../models/msgs";
@@ -17,23 +17,38 @@ const articles = [
 
  */
 
-
-const router:Router = new Router({prefix: '/api/v1/articles'});
+interface Post {
+  id: number,
+  name: string;
+  breed: string;
+  age: number;
+  description: string;
+  imageurl: string;
+  links: {
+    likes: string,
+    fav: string,
+    msg: string,
+    self: string
+  }
+}
+const router:Router = new Router({prefix: '/api/v1/dogs'});
 
 const getAll = async (ctx: RouterContext, next: any) => {
   //ctx.body = articles;
 const {limit=100, page=1,  order="dateCreated", direction='ASC'} = ctx.request.query;
   const parsedLimit = parseInt(limit as string, 10);
   const parsedPage = parseInt(page as string, 10);
-  const result = await model.getAll(20, 1, order, direction);
+  const result = await model.getAllDog(20, 1, order, direction);
    if (result.length) {
      const body: Post[] = result.map((post: any) => {
-       const { id = 0, title = "",  alltext="",summary = "", imageurl = "",authorid = 0,description="" }: Partial<Post> = post;
+       const { id = 0, name = "",  breed="",age = 0, imageurl = "",description="" }: Partial<Post> = post;
        const links = {
-         likes: `http://${ctx.host}/api/v1/dogs/${post.id}/`,
-         
+         likes: `http://${ctx.host}/api/v1/dogs/${post.id}/likes`,
+         fav: `http://${ctx.host}/api/v1/dogs/${post.id}/fav`,
+         msg: `http://${ctx.host}/api/v1/dogs/${post.id}/msg`,
+         self: `http://${ctx.host}/api/v1/dogs/${post.id}`
        };
-       return { id, title,   alltext,summary, imageurl,authorid, description, links }; 
+       return { id, name, age, breed, imageurl, description, links }; 
      });
   ctx.body = body;
   

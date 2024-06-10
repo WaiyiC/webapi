@@ -15,11 +15,6 @@ export const like = async  (id:any, uid:any) =>{
   return error
 }
  }
- 
-
- 
-
-    
 
 //remove a like record
 export const dislike = async  (id:any, uid:any)=> {

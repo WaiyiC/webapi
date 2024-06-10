@@ -21,3 +21,7 @@ externalPort = 80
 [[ports]]
 localPort = 10888
 externalPort = 3000
+
+[auth]
+pageEnabled = false
+buttonEnabled = false
