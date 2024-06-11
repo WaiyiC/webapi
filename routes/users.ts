@@ -81,9 +81,6 @@ const doSearch = async(ctx: any, next: any) =>{
 
   const createUser = async(ctx: any, next: any) =>{
   const body = ctx.request.body;
-    let avatarurl:string=' '
-    if(body.avatarurl)
-      avatarurl=body.avatarurl;
     let username:string= body.username;
     let password:string = body.password;
     let email:any = body.email;
@@ -98,7 +95,7 @@ const doSearch = async(ctx: any, next: any) =>{
        }
      }
     console.log("role ", role)
-    let newUser = {username: username, password: password, email: email, avatarurl: avatarurl, role: role};
+    let newUser = {username: username, password: password, email: email, role: role, anitcode: secretkey};
     
   let result = await model.add(newUser);
   if (result) {
@@ -112,17 +109,16 @@ const doSearch = async(ctx: any, next: any) =>{
 
   const login = async(ctx: any, next: any) =>{
   // return any details needed by the client
-    const user = ctx.state.user;
+    const user = ctx.state.users;
  // const { id, username, email, avatarurl, role } =ctx.state.user;
-    const id:number =user.user.id;
-    const username:string =user.user.username;
-    const email:string =user.user.email;
-    const avatarurl:string =user.user.avatarurl;
-    const role:string =user.user.role;
+    const id:number =user.users.id;
+    const username:string =user.users.username;
+    const email:string =user.users.email;
+    const role:string =user.users.role;
     const links = {
-    self: `http://${ctx.host}${prefix}/${id}`,
+    self: `http://${ctx.host}${prefix}/login/${id}`,
   };
-  ctx.body = { id, username, email, avatarurl, role, links };
+  ctx.body = { id, username, email, role, links };
 }
 
 const updateUser = async(ctx: any, ) =>{
@@ -131,7 +127,7 @@ const updateUser = async(ctx: any, ) =>{
   let result = await model.update(c,id)
   if (result) {
     ctx.status = 201
-    ctx.body = `User with id ${id} updated` 
+    ctx.body = `Users with id ${id} updated` 
   } 
 }
 
@@ -140,7 +136,7 @@ const deleteUser = async(ctx: any, next: any) =>{
   
   let user = await model.deleteById(id)
     ctx.status=201
-    ctx.body = `User with id ${id} deleted`
+    ctx.body = `Users with id ${id} deleted`
     await next();
 }
 
