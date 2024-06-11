@@ -8,7 +8,7 @@ const prefix = '/api/v1/users';
 const router:Router = new Router({ prefix: prefix });
 
 const getAll = async(ctx: any, next: any) =>{  
- 
+
     let users = await model.getAll(20, 1);
     if (users.length) {
       ctx.body = users;
@@ -17,11 +17,11 @@ const getAll = async(ctx: any, next: any) =>{
         ctx.body = {};
       }
       await next();
-  
+
   }
 
 const doSearch = async(ctx: any, next: any) =>{
-  
+
     let { limit = 50, page = 1, fields = "", q = "" } = ctx.request.query;
     // ensure params are integers
     limit = parseInt(limit);
@@ -41,7 +41,7 @@ const doSearch = async(ctx: any, next: any) =>{
       result = await model.getAll(limit, page);
      console.log(result)
     }
-      
+
     if (result.length) {
       if (fields !== "") {
         // first ensure the fields are contained in an array
@@ -96,7 +96,7 @@ const doSearch = async(ctx: any, next: any) =>{
      }
     console.log("role ", role)
     let newUser = {username: username, password: password, email: email, role: role, acticode: acticode};
-    
+
   let result = await model.add(newUser);
   if (result) {
     ctx.status = 201;
@@ -133,7 +133,7 @@ const updateUser = async(ctx: any, ) =>{
 
 const deleteUser = async(ctx: any, next: any) =>{
   let id = +ctx.params.id;
-  
+
   let user = await model.deleteById(id)
     ctx.status=201
     ctx.body = `Users with id ${id} deleted`
@@ -147,6 +147,6 @@ router.post('/', bodyParser(), validateUser, createUser);
 router.get('/:id([0-9]{1,})', getById);
 router.put('/:id([0-9]{1,})',bodyParser(), validateUser,  updateUser);
 router.del('/:id([0-9]{1,})', deleteUser);
-router.post('/login', basicAuth, login);
+router.post('/login', bodyParser(), basicAuth, login);
 
 export {router};

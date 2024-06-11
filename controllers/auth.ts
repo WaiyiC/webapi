@@ -1,60 +1,59 @@
-import passport from "koa-passport";
-import { BasicStrategy } from "passport-http";
-import { RouterContext } from "koa-router";
+import passport from 'koa-passport';
+import { BasicStrategy } from 'passport-http';
+import * as users from '../models/users';
 
-import * as users  from '../models/users';
-
+// Password verification function
 const verifyPassword = (user: any, password: string) => {
-  console.log('user return pwd: '+user.password);
-  console.log('input password '+ password)
-  return user.password === password;
-}
+  console.log('Stored password: ' + user.password);
+  console.log('Input password: ' + password);
+  return user.password === password; // Update this to use bcrypt if passwords are hashed
+};
 
+// Basic Strategy for passport
 passport.use(new BasicStrategy(async (username, password, done) => {
-
-  if (username === "admin" && password === "password") {
-    done(null, { username: "admin" });
-  } else {
-    done(null, false);
-  } 
-  let result: any[] = [];
   try {
-    result = await users.findByUsername(username);
-    console.log('user found');
+    const result = await users.findByUsername(username);
+
+    if (result.length) {
+      const user = result[0];
+      console.log('User found: ' + user.username);
+
+      if (verifyPassword(user, password)) {
+        console.log('Password verified');
+        return done(null, user);
+      } else {
+        console.log(`Password incorrect for ${username}`);
+        return done(null, false);
+      }
+    } else {
+      console.log(`No user found with username ${username}`);
+      return done(null, false);
+    }
   } catch (error) {
     console.error(`Error during authentication for user ${username}: ${error}`);
-    done(null, false);
-  }
-  if(result.length) {
-    const user = result[0];
-    console.log('username: '+ user.username);
-    if(verifyPassword(user, password)) {
-      console.log('done')
-      done(null, {user: user});
-    } else {
-      console.log(`Password incorrect for ${username}`);
-      done(null, false);
-    }
-  } else {
-    console.log(`No user found with username ${username}`);
-    done(null, false);
+    return done(error);
   }
 }));
 
-export const basicAuth = async (ctx: RouterContext, next: any) => {
-  await passport.authenticate("basic", { session: false })(ctx, next);
-  if(ctx.status == 401)
-  {
-    ctx.body = {
-      message: 'you are not authorized'
-    };
-   }
-  else {
-   const user = ctx.state.user; 
-     console.log('user=> '+JSON.stringify(user))
-    console.log('status=> '+ctx.status)
-  ctx.body = {message: `Hello ${user.user.username} you registered on ${user.user.dateregistered}`} 
+// Middleware for authentication
+export const basicAuth = async (ctx: Context, next: Next) => {
+  return passport.authenticate('basic', { session: false }, (err, user, info) => {
+    if (err) {
+      console.error('Error during authentication:', err);
+      ctx.status = 500;
+      ctx.body = { message: 'Internal server error' };
+      return;
     }
-  }
 
+    if (!user) {
+      console.log('Authentication failed:', info);
+      ctx.status = 401;
+      ctx.body = { message: 'You are not authorized' };
+      return;
+    }
 
+    ctx.state.user = user;
+    console.log('Authenticated user:', user);
+    return next();
+  })(ctx, next);
+};
