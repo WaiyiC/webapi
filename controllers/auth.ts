@@ -4,8 +4,6 @@ import * as users from '../models/users';
 
 // Password verification function
 const verifyPassword = (user: any, password: string) => {
-  console.log('Stored password: ' + user.password);
-  console.log('Input password: ' + password);
   return user.password === password; // Update this to use bcrypt if passwords are hashed
 };
 
@@ -13,30 +11,24 @@ const verifyPassword = (user: any, password: string) => {
 passport.use(new BasicStrategy(async (username, password, done) => {
   try {
     const result = await users.findByUsername(username);
-
     if (result.length) {
       const user = result[0];
-      console.log('User found: ' + user.username);
-
       if (verifyPassword(user, password)) {
-        console.log('Password verified');
         return done(null, user);
       } else {
-        console.log(`Password incorrect for ${username}`);
         return done(null, false);
       }
     } else {
-      console.log(`No user found with username ${username}`);
       return done(null, false);
     }
   } catch (error) {
-    console.error(`Error during authentication for user ${username}: ${error}`);
+    console.error('Error in BasicStrategy:', error);
     return done(error);
   }
 }));
 
 // Middleware for authentication
-export const basicAuth = async (ctx: Context, next: Next) => {
+export const basicAuth = async (ctx: any, next: any) => {
   return passport.authenticate('basic', { session: false }, (err, user, info) => {
     if (err) {
       console.error('Error during authentication:', err);

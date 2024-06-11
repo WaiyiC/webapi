@@ -1,54 +1,67 @@
 import Koa from "koa";
-import Router, { RouterContext }  from "koa-router";
+import Router, { RouterContext } from "koa-router";
 import logger from "koa-logger";
 import json from "koa-json";
 import passport from 'koa-passport';
 import bodyParser from "koa-bodyparser";
-import cors from '@koa/cors' ;
+import cors from '@koa/cors';
+import serve from 'koa-static';
 import { router as articles } from "./routes/articles";
 import { router as dogs } from "./routes/dogs";
 import { router as special } from './routes/special';
 import { router as uploads } from './routes/uploads';
 import { router as users } from "./routes/users";
-import serve from 'koa-static';
 
 const app: Koa = new Koa();
 const router: Router = new Router();
 
-/*const welcomeAPI = async (ctx: RouterContext, next:any) => {
-  ctx.body = {message: "Welcome to the blog API!"};
-  await next();
-}
-
-router.get('/api/v1', welcomeAPI);
-*/
-// For Document:
+// Serve static files from the docs directory
 app.use(serve('./docs'));
+
+// CORS middleware
 app.use(cors());
+
+// Logging middleware
 app.use(logger());
+
+// JSON pretty-printed response middleware
 app.use(json());
+
+// Body parser middleware
 app.use(bodyParser());
-app.use(router.routes());
+
+// Initialize passport for authentication
 app.use(passport.initialize());
-app.use(articles.middleware());
-app.use(dogs.middleware());
-app.use(special.middleware());
-app.use(uploads.middleware());
-app.use(users.middleware());
 
+// Routes
+app.use(users.routes());
+app.use(users.allowedMethods());
+app.use(articles.routes());
+app.use(articles.allowedMethods());
+app.use(dogs.routes());
+app.use(dogs.allowedMethods());
+app.use(special.routes());
+app.use(special.allowedMethods());
+app.use(uploads.routes());
+app.use(uploads.allowedMethods());
+
+// 404 handler
 app.use(async (ctx: RouterContext, next: any) => {
-  try {
-    await next();
-    console.log(ctx.status)
-    if(ctx.status === 404){
-      ctx.body = {err: "No such endpoint existed"};
-    }
-  } catch(err: any) {
-    ctx.body = {err: err};
+  await next();
+  if (ctx.status === 404) {
+    ctx.status = 404;
+    ctx.body = { err: "No such endpoint existed" };
   }
-
 });
-let port = process.env.PORT || 10888;
-app.listen(10888, () => {
-console.log( `Koa Started at ${port}` );
-})
+
+// Global error handler
+app.on('error', (err, ctx) => {
+  console.error('server error', err, ctx);
+  ctx.status = err.status || 500;
+  ctx.body = { err: err.message };
+});
+
+const port = process.env.PORT || 10888;
+app.listen(port, () => {
+  console.log(`Koa server started on port ${port}`);
+});
