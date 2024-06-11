@@ -85,17 +85,17 @@ const doSearch = async(ctx: any, next: any) =>{
     let password:string = body.password;
     let email:any = body.email;
     let role:string = 'user';
-    let secretkey:string = body.actiCode;
-    let secretList:string[]= ["mongkok_123456789", "mongkok_987654321","shatin_123456789","shatin_987654321","chaiwan_123456789","chaiwan_987654321" ]
-     if(secretkey)
-     {for(let i=0;i<secretList.length;i++)
-       if(secretkey==secretList[i])
+    let acticode:string = body.actiCode;
+    let actiCodeList:string[]= ["mongkok_123456789", "mongkok_987654321","shatin_123456789","shatin_987654321","chaiwan_123456789","chaiwan_987654321" ]
+     if(acticode)
+     {for(let i=0;i<actiCodeList.length;i++)
+       if(acticode==actiCodeList[i])
        {role='admin'
         break;
        }
      }
     console.log("role ", role)
-    let newUser = {username: username, password: password, email: email, role: role, anitcode: secretkey};
+    let newUser = {username: username, password: password, email: email, role: role, acticode: acticode};
     
   let result = await model.add(newUser);
   if (result) {
