@@ -107,19 +107,22 @@ const doSearch = async(ctx: any, next: any) =>{
   }
 }
 
-  const login = async(ctx: any, next: any) =>{
-  // return any details needed by the client
-    const user = ctx.state.user;
- // const { id, username, email, avatarurl, role } =ctx.state.user;
-    const id:number =user.users.id;
-    const username:string =user.users.username;
-    const email:string =user.users.email;
-    const role:string =user.users.role;
-    const links = {
+const login = async (ctx: any, next: any) => {
+  // Return any details needed by the client
+  const user = ctx.state.user;
+  if (!user) {
+    ctx.status = 401;
+    ctx.body = { message: 'Authentication failed' };
+    return;
+  }
+  const { id, username, email, role } = user;
+  const links = {
     self: `http://${ctx.host}${prefix}/login/${id}`,
   };
   ctx.body = { id, username, email, role, links };
+  await next();
 }
+
 
 const updateUser = async(ctx: any, ) =>{
   let id = +ctx.params.id;
