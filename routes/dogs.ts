@@ -48,7 +48,13 @@ const {limit=100, page=1,  order="dateCreated", direction='ASC'} = ctx.request.q
    }
 }
 const createArticle = async (ctx: RouterContext, next: any) => {
- 
+  /*let c: any = ctx.request.body;
+  let title = c.title;
+  let fullText = c.fullText;
+  let newArticle = {title: title, fullText: fullText};
+  articles.push(newArticle);
+  ctx.status = 201;
+  ctx.body = newArticle;*/
   const body = ctx.request.body;
   let result = await model.add(body);
   if(result.status==201) {

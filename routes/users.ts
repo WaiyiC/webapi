@@ -1,91 +1,152 @@
+import { basicAuth } from '../controllers/auth';
+import { validateUser } from "../controllers/validation";
 import Router from 'koa-router';
 import bodyParser from 'koa-bodyparser';
-import { basicAuth } from '../controllers/auth';
-import { validateUser } from '../controllers/validation';
 import * as model from '../models/users';
 
 const prefix = '/api/v1/users';
-const router = new Router({ prefix });
+const router:Router = new Router({ prefix: prefix });
 
-const getAll = async (ctx: any, next: any) => {
-  let users = await model.getAll(20, 1);
-  ctx.body = users.length ? users : {};
-  await next();
-};
+const getAll = async(ctx: any, next: any) =>{  
 
-const doSearch = async (ctx: any, next: any) => {
-  let { limit = 50, page = 1, fields = "", q = "" } = ctx.request.query;
-  limit = Math.min(Math.max(parseInt(limit), 1), 200);
-  page = Math.max(parseInt(page), 1);
-  try {
-    let result = q ? await model.getSearch(fields, q) : await model.getAll(limit, page);
-    if (result.length && fields) {
-      if (!Array.isArray(fields)) fields = [fields];
-      result = result.map((record: any) => {
-        let partial: any = {};
-        for (let field of fields) {
-          partial[field] = record[field];
-        }
-        return partial;
-      });
+    let users = await model.getAll(20, 1);
+    if (users.length) {
+      ctx.body = users;
     }
-    ctx.body = result;
-  } catch (error) {
-    ctx.status = 500;
-    ctx.body = { message: 'Internal server error' };
+      else {
+        ctx.body = {};
+      }
+      await next();
+
   }
-  await next();
-};
 
-const getById = async (ctx: any, next: any) => {
-  let user = await model.getByUserId(ctx.params.id);
-  ctx.body = user.length ? user[0] : {};
-  await next();
-};
+const doSearch = async(ctx: any, next: any) =>{
 
-const createUser = async (ctx: any, next: any) => {
-  const { username, password, email, acticode } = ctx.request.body;
-  let role = ['mongkok_123456789', 'mongkok_987654321', 'shatin_123456789', 'shatin_987654321', 'chaiwan_123456789', 'chaiwan_987654321'].includes(acticode) ? 'admin' : 'user';
-  let newUser = { username, password, email, role, acticode };
+    let { limit = 50, page = 1, fields = "", q = "" } = ctx.request.query;
+    // ensure params are integers
+    limit = parseInt(limit);
+    page = parseInt(page);
+    // validate values to ensure they are sensible
+    limit = limit > 200 ? 200 : limit;
+    limit = limit < 1 ? 10 : limit;
+    page = page < 1 ? 1 : page;
+    let result:any;
+    // search by single field and field contents
+    // need to validate q input
+   try{
+    if (q !== "") 
+      result = await model.getSearch(fields, q);     
+    else
+    {console.log('get all')
+      result = await model.getAll(limit, page);
+     console.log(result)
+    }
+
+    if (result.length) {
+      if (fields !== "") {
+        // first ensure the fields are contained in an array
+        // need this since a single field in the query is passed as a string
+        console.log('fields'+fields)
+        if (!Array.isArray(fields)) {
+          fields = [fields];
+        }
+        // then filter each row in the array of results
+        // by only including the specified fields
+        result = result.map((record: any) => {
+          let partial: any = {};
+          for (let field of fields) {
+            partial[field] = record[field];
+          }
+          return partial;
+        });
+      }
+      console.log(result)
+      ctx.body = result;
+    }
+  }
+    catch(error) {
+      return error
+    }
+   await next();
+  }
+
+
+  const getById = async(ctx: any, next: any) =>{
+  let id = ctx.params.id;
+  let user = await model.getByUserId(id);
+  if (user.length) {
+    ctx.body = user[0];
+  }
+}
+
+  const createUser = async(ctx: any, next: any) =>{
+  const body = ctx.request.body;
+    let username:string= body.username;
+    let password:string = body.password;
+    let email:any = body.email;
+    let role:string = 'user';
+    let acticode:string = body.actiCode;
+    let actiCodeList:string[]= ["mongkok_123456789", "mongkok_987654321","shatin_123456789","shatin_987654321","chaiwan_123456789","chaiwan_987654321" ]
+     if(acticode)
+     {for(let i=0;i<actiCodeList.length;i++)
+       if(acticode==actiCodeList[i])
+       {role='admin'
+        break;
+       }
+     }
+    console.log("role ", role)
+    let newUser = {username: username, password: password, email: email, role: role, acticode: acticode};
+
   let result = await model.add(newUser);
-  ctx.status = 201;
-  ctx.body = result ? result : { message: "New user created" };
-};
-
-const login = async (ctx: any, next: any) => {
-  // Return any details needed by the client
-  const user = ctx.state.user;
-  if (!user) {
-    ctx.status = 401;
-    ctx.body = { message: 'Authentication failed' };
-    return;
+  if (result) {
+    ctx.status = 201;
+    ctx.body = result;
+  } else {
+    ctx.status = 201;
+    ctx.body = "{message:New user created}";
   }
-  const { id, username, email, role } = user;
-  const links = {
+}
+
+  const login = async(ctx: any, next: any) =>{
+  // return any details needed by the client
+    const user = ctx.state.user;
+ // const { id, username, email, avatarurl, role } =ctx.state.user;
+    const id:number =user.users.id;
+    const username:string =user.users.username;
+    const email:string =user.users.email;
+    const role:string =user.users.role;
+    const links = {
     self: `http://${ctx.host}${prefix}/login/${id}`,
   };
   ctx.body = { id, username, email, role, links };
-  await next();
 }
 
-const updateUser = async (ctx: any) => {
-  let result = await model.update(ctx.request.body, +ctx.params.id);
-  ctx.status = 201;
-  ctx.body = `User with id ${ctx.params.id} updated`;
-};
+const updateUser = async(ctx: any, ) =>{
+  let id = +ctx.params.id;
+  let c: any = ctx.request.body; 
+  let result = await model.update(c,id)
+  if (result) {
+    ctx.status = 201
+    ctx.body = `Users with id ${id} updated` 
+  } 
+}
 
-const deleteUser = async (ctx: any, next: any) => {
-  await model.deleteById(+ctx.params.id);
-  ctx.status = 201;
-  ctx.body = `User with id ${ctx.params.id} deleted`;
-  await next();
-};
+const deleteUser = async(ctx: any, next: any) =>{
+  let id = +ctx.params.id;
+
+  let user = await model.deleteById(id)
+    ctx.status=201
+    ctx.body = `Users with id ${id} deleted`
+    await next();
+}
+
 
 router.get('/', basicAuth, doSearch);
+//router.get('/search', basicAuth, doSearch);
 router.post('/', bodyParser(), validateUser, createUser);
 router.get('/:id([0-9]{1,})', getById);
-router.put('/:id([0-9]{1,})', bodyParser(), validateUser, updateUser);
+router.put('/:id([0-9]{1,})',bodyParser(), validateUser,  updateUser);
 router.del('/:id([0-9]{1,})', deleteUser);
 router.post('/login', bodyParser(), basicAuth, login);
 
-export { router };
+export {router};
