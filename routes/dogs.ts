@@ -7,15 +7,6 @@ import * as msgs from "../models/msgs";
 import { validateArticle } from "../controllers/validation";
 import { basicAuth } from "../controllers/auth";
 
-/*
-const articles = [
-  {title: 'Hello article', fullText: 'some text to fill the body'},
-  {title: 'another article', fullText: 'again here is some text here to fill'},
-  {title: 'coventry university', fullText: 'some news about coventry university'},
-  {title: 'smart campus', fullText: 'smart campus is coming to IVE'}
-];
-
- */
 
 interface Post {
   id: number,
@@ -57,13 +48,7 @@ const {limit=100, page=1,  order="dateCreated", direction='ASC'} = ctx.request.q
    }
 }
 const createArticle = async (ctx: RouterContext, next: any) => {
-  /*let c: any = ctx.request.body;
-  let title = c.title;
-  let fullText = c.fullText;
-  let newArticle = {title: title, fullText: fullText};
-  articles.push(newArticle);
-  ctx.status = 201;
-  ctx.body = newArticle;*/
+ 
   const body = ctx.request.body;
   let result = await model.add(body);
   if(result.status==201) {
