@@ -3,7 +3,7 @@ import * as db from '../helpers/database';
 //add a new like record
 export const like = async  (id:any, uid:any) =>{
 
- let query = `INSERT INTO articleslikes (articleid,userid) VALUES (${id},${uid}) ON CONFLICT ON CONSTRAINT  NoDuplicateLike DO NOTHING RETURNING userid;`   
+ let query = `INSERT INTO dogLikes (dogid,userid) VALUES (${id},${uid}) ON CONFLICT ON CONSTRAINT  NoDuplicateLike DO NOTHING RETURNING userid;`   
   
  try{   
  
@@ -18,7 +18,7 @@ export const like = async  (id:any, uid:any) =>{
 
 //remove a like record
 export const dislike = async  (id:any, uid:any)=> {
-  let query = "DELETE FROM articleslikes WHERE articleid=? AND userid=?; ";
+  let query = "DELETE FROM dogLikes WHERE dogid=? AND userid=?; ";
    try{
     await db.run_query(query, [id, uid]);  
     return { "affectedRows":1 }
@@ -31,7 +31,7 @@ export const dislike = async  (id:any, uid:any)=> {
 //count the likes for an article
 
 export const count = async  (id:any) =>{
-  let query = "SELECT count(1) as likes FROM articleslikes WHERE articleid=?;";
+  let query = "SELECT count(1) as likes FROM dogid WHERE dogid=?;";
   const result:any = await db.run_query(query, [id]);
   return result[0].likes;
 }

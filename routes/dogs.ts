@@ -1,7 +1,7 @@
 import Router, {RouterContext} from "koa-router";
 import bodyParser from "koa-bodyparser";
 import * as model from "../models/dogs";
-import * as likes from "../models/likes";
+import * as dogLikes from "../models/dogLikes";
 import * as favs from "../models/favs";
 import * as msgs from "../models/msgs";
 import { validateDog } from "../controllers/validation";
@@ -48,7 +48,6 @@ const {limit=100, page=1,  order="dateCreated", direction='ASC'} = ctx.request.q
    }
 }
 const createDog = async (ctx: RouterContext, next: any) => {
-  
   const body = ctx.request.body;
   let result = await model.addDog(body);
   if(result.status==201) {
@@ -63,11 +62,6 @@ const createDog = async (ctx: RouterContext, next: any) => {
 
 const getById = async (ctx: RouterContext, next: any) => {
   let id = +ctx.params.id;
-  /*if((id < articles.length +1) && (id>0)){
-    ctx.body = articles[id-1];
-  } else {
-    ctx.status = 404;
-  }*/
   let dog = await model.getByDogId(id);
   if(dog.length) {
     ctx.body = dog[0];
@@ -103,30 +97,86 @@ let dog:any = await model.deleteByDogId(id)
 
 // methods for like icon
 async function likesCount(ctx: RouterContext, next: any) {
-  // For you TODO: add error handling and error response code
-  const id = ctx.params.id;
-  const result = await likes.count(id); 
-  ctx.body = result ? result : 0;
+try {
+    const id = +ctx.params.id;
+    const result = await dogLikes.count(id);
+    ctx.body = { likes: result };
+  } catch (error) {
+    console.error(`Error fetching likes count for dog with ID ${ctx.params.id}:`, error);
+    ctx.body = { message: "Internal server error" };
+    ctx.status = 500;
+  }
   await next();
 }
 
-async function likePost(ctx: RouterContext, next: any) {
-  // For you TODO: add error handling and error response code
-  const user = ctx.state.user;
-  const uid:number =user.user.id;
-  const id = parseInt(ctx.params.id);
-  const result:any = await likes.like(id, uid);
-  ctx.body = result.affectedRows ? {message: "liked",userid:result.userid} : {message: "error"};
+async function likeDogs(ctx: RouterContext, next: () => Promise<any>) {
+  try {
+    if (!ctx.isAuthenticated()) {
+      ctx.status = 401;
+      ctx.body = { message: "Unauthorized" };
+      return;
+    }
+
+    const user = ctx.state.user;
+    if (!user || !user.id) {
+      ctx.status = 401;
+      ctx.body = { message: "Unauthorized" };
+      return;
+    }
+
+    const userid: number = user.id;
+    console.log('User ID:', userid);
+
+    const dogid: number = parseInt(ctx.params.id, 10);
+    console.log('Dog ID:', dogid);
+
+    const result: any = await dogLikes.like(dogid, userid);
+    console.log('Database result:', result);
+
+    ctx.body = result.affectedRows ? { message: "liked", userid: result.userid } : { message: "error" };
+  } catch (error) {
+    console.error("Error in likeDogs:", error);
+    ctx.status = 500;
+    ctx.body = { message: "Internal server error" };
+  }
+
   await next();
 }
 
-async function dislikePost(ctx: RouterContext, next: any) {
-  // For you TODO: add error handling and error response code
-  const user = ctx.state.user;
-  const uid:number =user.user.id;
-  const id = parseInt(ctx.params.id);
-  const result:any = await likes.dislike(id, uid);
-  ctx.body = result.affectedRows ? {message: "disliked"} : {message: "error"};
+
+
+async function dislikeDogs(ctx: RouterContext, next: () => Promise<any>) {
+  try {
+    
+    if (!ctx.isAuthenticated()) {
+      ctx.status = 401;
+      ctx.body = { message: "Unauthorized" };
+      return;
+    }
+
+    const user = ctx.state.user;
+    if (!user || !user.id) {
+      ctx.status = 401;
+      ctx.body = { message: "Unauthorized" };
+      return;
+    }
+
+    const userid: number = user.id;
+    console.log('User ID:', userid);
+
+    const dogid: number = parseInt(ctx.params.id, 10);
+    console.log('Dog ID:', dogid);
+
+    const result: any = await dogLikes.dislike(dogid, userid);
+    console.log('Database result:', result);
+
+    ctx.body = result.affectedRows ? { message: "unliked", userid: result.userid } : { message: "error" };
+  } catch (error) {
+    console.error("Error in likeDogs:", error);
+    ctx.status = 500;
+    ctx.body = { message: "Internal server error" };
+  }
+
   await next();
 }
 
@@ -197,15 +247,15 @@ router.post('/', basicAuth, bodyParser(), validateDog, createDog);
 router.get('/:id([0-9]{1,})', getById);
 router.put('/:id([0-9]{1,})', basicAuth, bodyParser(),validateDog, updateDog);
 router.delete('/:id([0-9]{1,})', basicAuth, deleteDog);
-router.get('/:id([0-9]{1,})/likes', likesCount);
-router.post('/:id([0-9]{1,})/likes', basicAuth, likePost);
-router.del('/:id([0-9]{1,})/likes', basicAuth, dislikePost);
+router.get('/:id([0-9]{1,})/like', likesCount);
+router.post('/:id([0-9]{1,})/likes', basicAuth, likeDogs);
+router.delete('/:id([0-9]{1,})/likes', basicAuth, dislikeDogs);
 
 router.get('/fav', basicAuth, userFav);
 router.post('/:id([0-9]{1,})/fav', basicAuth, postFav);
-router.del('/:id([0-9]{1,})/fav', basicAuth, rmFav);
+router.delete('/:id([0-9]{1,})/fav', basicAuth, rmFav);
 
 router.get('/:id([0-9]{1,})/msg', listMsg);
 router.post('/:id([0-9]{1,})/msg', bodyParser(), basicAuth, addMsg);
-router.del('/:id([0-9]{1,})/msg', basicAuth, bodyParser(),rmMsg);
+router.delete('/:id([0-9]{1,})/msg', basicAuth, bodyParser(),rmMsg);
 export { router };
