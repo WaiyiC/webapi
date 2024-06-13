@@ -4,7 +4,7 @@ import * as model from "../models/dogs";
 import * as likes from "../models/likes";
 import * as favs from "../models/favs";
 import * as msgs from "../models/msgs";
-import { validateArticle } from "../controllers/validation";
+import { validateDog } from "../controllers/validation";
 import { basicAuth } from "../controllers/auth";
 
 
@@ -47,16 +47,10 @@ const {limit=100, page=1,  order="dateCreated", direction='ASC'} = ctx.request.q
       
    }
 }
-const createArticle = async (ctx: RouterContext, next: any) => {
-  /*let c: any = ctx.request.body;
-  let title = c.title;
-  let fullText = c.fullText;
-  let newArticle = {title: title, fullText: fullText};
-  articles.push(newArticle);
-  ctx.status = 201;
-  ctx.body = newArticle;*/
+const createDog = async (ctx: RouterContext, next: any) => {
+  
   const body = ctx.request.body;
-  let result = await model.add(body);
+  let result = await model.addDog(body);
   if(result.status==201) {
     ctx.status = 201;
     ctx.body = body;
@@ -74,9 +68,9 @@ const getById = async (ctx: RouterContext, next: any) => {
   } else {
     ctx.status = 404;
   }*/
-  let article = await model.getById(id);
-  if(article.length) {
-    ctx.body = article[0];
+  let dog = await model.getByDogId(id);
+  if(dog.length) {
+    ctx.body = dog[0];
      ctx.status=200;
   } else {
     ctx.status = 404;
@@ -84,23 +78,12 @@ const getById = async (ctx: RouterContext, next: any) => {
   await next();
 }
 
-const updateArticle = async (ctx: RouterContext, next: any) => {
+const updateDog = async (ctx: RouterContext, next: any) => {
   let id = +ctx.params.id;
   //let {title, fullText} = ctx.request.body;
   let c: any = ctx.request.body;
-  /*
-  let title = c.title;
-  let fullText = c.fullText;
-  if ((id < articles.length+1) && (id > 0)) {
-    articles[id-1].title = title;
-    articles[id-1].fullText = fullText;
-    ctx.status = 200;    
-    ctx.body = articles;
-  } else {
-    ctx.status = 404;
-  }
-  */
-  let result = await model.update(c,id)
+  
+  let result = await model.updateDog(c,id)
   if (result) {
     ctx.status = 201
     ctx.body = `dogs with id ${id} updated` 
@@ -108,20 +91,12 @@ const updateArticle = async (ctx: RouterContext, next: any) => {
   await next();
 }
 
-const deleteArticle = async (ctx: RouterContext, next: any) => {
+const deleteDog = async (ctx: RouterContext, next: any) => {
   let id = +ctx.params.id;
- /*
-  if((id < articles.length+1) && (id > 0)) {
-    articles.splice(id-1, 1);
-    ctx.status = 200;
-    ctx.body = articles;
-  } else {
-    ctx.status = 404;
-  }
-  */
-let article:any = await model.deleteById(id)
+
+let dog:any = await model.deleteByDogId(id)
   ctx.status=201
-  ctx.body = article.affectedRows ? {message: "removed"} : {message: "error"};
+  ctx.body = dog.affectedRows ? {message: "removed"} : {message: "error"};
   await next();
 }
 
@@ -218,10 +193,10 @@ async function rmMsg(ctx: RouterContext, next: any){
 }
 
 router.get('/', getAll);
-router.post('/', basicAuth, bodyParser(), validateArticle, createArticle);
+router.post('/', basicAuth, bodyParser(), validateDog, createDog);
 router.get('/:id([0-9]{1,})', getById);
-router.put('/:id([0-9]{1,})', basicAuth, bodyParser(),validateArticle, updateArticle);
-router.delete('/:id([0-9]{1,})', basicAuth, deleteArticle);
+router.put('/:id([0-9]{1,})', basicAuth, bodyParser(),validateDog, updateDog);
+router.delete('/:id([0-9]{1,})', basicAuth, deleteDog);
 router.get('/:id([0-9]{1,})/likes', likesCount);
 router.post('/:id([0-9]{1,})/likes', basicAuth, likePost);
 router.del('/:id([0-9]{1,})/likes', basicAuth, dislikePost);
