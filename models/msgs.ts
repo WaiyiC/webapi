@@ -2,7 +2,7 @@ import * as db from '../helpers/database';
 
 //get all Msgs of articled
 export const getMsg= async  (id:any)=> {
-  let query = "SELECT * FROM dogComments WHERE dogid=?;";
+  let query = "SELECT * FROM dogscomment WHERE dogid=?;";
   const result = await db.run_query(query, [id]);
   return result;
 }

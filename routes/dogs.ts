@@ -4,7 +4,6 @@ import * as model from "../models/dogs";
 import * as dogLikes from "../models/dogLikes";
 import * as favs from "../models/favs";
 import * as msgs from "../models/msgs";
-import * as dogComments from "../models/dogComments";
 import { validateDog } from "../controllers/validation";
 import { basicAuth } from "../controllers/auth";
 
@@ -325,7 +324,7 @@ router.get('/fav', basicAuth, userFav);
 router.post('/:id([0-9]{1,})/fav', basicAuth, postFav);
 router.delete('/:id([0-9]{1,})/fav', basicAuth, rmFav);
 
-router.get('/:id([0-9]{1,})/msg', listMsg);
+router.get('/:id([0-9]{1,})/comment', listMsg);
 router.post('/:id([0-9]{1,})/comment', bodyParser(), basicAuth, addComment);
 router.delete('/:id([0-9]{1,})/delComment', basicAuth, bodyParser(),deleteComment);
 export { router };
