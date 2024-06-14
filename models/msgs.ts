@@ -22,10 +22,6 @@ export const add_Msg = async (id: any, uid: any, msg: string) => {
   }
 };
 
-
-
-    
-
 //remove a msg record
 export const removeMsg = async  (id:any, msg:any)=> {
   console.log('body query ', msg)
