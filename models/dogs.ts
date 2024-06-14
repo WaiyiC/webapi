@@ -8,6 +8,25 @@ export const getByDogId = async (id: any) => {
   return data;
 }
 
+export const getByDog = async (age: any, breed: any) => {
+  let query = 'SELECT * FROM dogs WHERE 1=1';
+  let values = [];
+
+  if (!isNaN(age)) {
+    query += ' AND age = ?';
+    values.push(age);
+  }
+
+  if (breed) {
+    query += ' AND breed = ?';
+    values.push(breed);
+  }
+
+  let data = await db.run_query(query, values);
+  return data;
+};
+
+
 export const getAllDog = async  (limit=10, page=1, order:any, direction:any) =>{
   const offset = (page - 1) * limit;
   const query = "SELECT * FROM dogs LIMIT  ? OFFSET  ?;";

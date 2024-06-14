@@ -4,6 +4,7 @@ import * as model from "../models/dogs";
 import * as dogLikes from "../models/dogLikes";
 import * as favs from "../models/favs";
 import * as msgs from "../models/msgs";
+import * as dogComments from "../models/dogComments";
 import { validateDog } from "../controllers/validation";
 import { basicAuth } from "../controllers/auth";
 
@@ -72,6 +73,34 @@ const getById = async (ctx: RouterContext, next: any) => {
   await next();
 }
 
+const getByDog = async (ctx: RouterContext, next: any) => {
+  const age = parseInt(ctx.params.age);
+  const breed = ctx.params.breed;
+
+  if (isNaN(age) && !breed) {
+    ctx.status = 400;
+    ctx.body = { error: 'Invalid age or breed' };
+    return;
+  }
+
+  try {
+    const dogs = await model.getByDog(age, breed);
+    if (dogs.length) {
+      ctx.body = dogs;
+      ctx.status = 200;
+    } else {
+      ctx.status = 404;
+      ctx.body = { message: 'No dogs found' };
+    }
+  } catch (error) {
+    console.error('Error fetching dogs by age or breed:', error);
+    ctx.status = 500;
+    ctx.body = { message: 'Internal server error' };
+  }
+
+  await next();
+};
+
 const updateDog = async (ctx: RouterContext, next: any) => {
   let id = +ctx.params.id;
   //let {title, fullText} = ctx.request.body;
@@ -116,7 +145,6 @@ async function likeDogs(ctx: RouterContext, next: () => Promise<any>) {
       ctx.body = { message: "Unauthorized" };
       return;
     }
-
     const user = ctx.state.user;
     if (!user || !user.id) {
       ctx.status = 401;
@@ -139,7 +167,6 @@ async function likeDogs(ctx: RouterContext, next: () => Promise<any>) {
     ctx.status = 500;
     ctx.body = { message: "Internal server error" };
   }
-
   await next();
 }
 
@@ -218,33 +245,76 @@ async function listMsg(ctx: RouterContext, next: any){
   await next();
 }
 
-async function addMsg(ctx: RouterContext, next: any){
-  const id = parseInt(ctx.params.id);
-  const user = ctx.state.user;
-  const uid:number =user.user.id;
-  const uname = user.user.username;
-  let msg:any = ctx.request.body;
-  console.log('ctx.request.body ',ctx.request.body)
-  console.log('..msg ',msg)
-  const result:any= await msgs.add_Msg(id, uid,uname, msg);
-  ctx.body = result.affectedRows ? {message: "added"} : {message: "error"};
+async function addComment(ctx: RouterContext, next: () => Promise<any>) {
+  try {
+    if (!ctx.isAuthenticated()) {
+      ctx.status = 401;
+      ctx.body = { message: "Unauthorized" };
+      return;
+    }
+    const user = ctx.state.user;
+    if (!user || !user.id) {
+      ctx.status = 401;
+      ctx.body = { message: "Unauthorized" };
+      return;
+    }
+
+    const userid: number = user.id;
+    console.log('User ID:', userid);
+
+    const dogid: number = parseInt(ctx.params.id, 10);
+    console.log('Dog ID:', dogid);
+
+    const requestBody: { messagetxt: string } = ctx.request.body as { messagetxt: string };
+    const messagetxt: string = requestBody.messagetxt;
+    console.log('Comment:', messagetxt);
+
+    
+    const result: any = await msgs.add_Msg(dogid, userid, messagetxt);
+    console.log('Database result:', result);
+
+    ctx.body = result.affectedRows ? { message: "liked", userid: result.userid } : { message: "error" };
+  } catch (error) {
+    console.error("Error in likeDogs:", error);
+    ctx.status = 500;
+    ctx.body = { message: "Internal server error" };
+  }
+  await next();
+}
+async function deleteComment(ctx: RouterContext, next: any) {
+  try {
+    if (!ctx.isAuthenticated()) {
+      ctx.status = 401;
+      ctx.body = { message: "Unauthorized" };
+      return;
+    }
+
+    const user = ctx.state.user;
+    if (!user || !user.id) {
+      ctx.status = 401;
+      ctx.body = { message: "Unauthorized" };
+      return;
+    }
+
+    const commentId: number = parseInt(ctx.params.commentId, 10);
+    const result: any = await dogComments.deleteComment(commentId);
+
+    ctx.body = result.affectedRows ? { message: "Comment deleted" } : { message: "Failed to delete comment" };
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    ctx.status = 500;
+    ctx.body = { message: "Internal server error" };
+  }
+
   await next();
 }
 
-async function rmMsg(ctx: RouterContext, next: any){
-  // const uid = ctx.state.user.id;
-// only admin can del article comment
- let b:any = ctx.request.body;
- 
- const id = parseInt(ctx.params.id); 
-  const result:any = await msgs.removeMsg(id, b);
-  ctx.body = result.affectedRows ? {message: "removed"} : {message: "error"}; 
-  await next();
-}
 
 router.get('/', getAll);
 router.post('/', basicAuth, bodyParser(), validateDog, createDog);
 router.get('/:id([0-9]{1,})', getById);
+router.get('/age/:age([0-9]{1,})', getByDog);
+router.get('/breed/:breed([a-z,A-Z]{1,})', getByDog);
 router.put('/:id([0-9]{1,})', basicAuth, bodyParser(),validateDog, updateDog);
 router.delete('/:id([0-9]{1,})', basicAuth, deleteDog);
 router.get('/:id([0-9]{1,})/like', likesCount);
@@ -256,6 +326,6 @@ router.post('/:id([0-9]{1,})/fav', basicAuth, postFav);
 router.delete('/:id([0-9]{1,})/fav', basicAuth, rmFav);
 
 router.get('/:id([0-9]{1,})/msg', listMsg);
-router.post('/:id([0-9]{1,})/msg', bodyParser(), basicAuth, addMsg);
-router.delete('/:id([0-9]{1,})/msg', basicAuth, bodyParser(),rmMsg);
+router.post('/:id([0-9]{1,})/comment', bodyParser(), basicAuth, addComment);
+router.delete('/:id([0-9]{1,})/delComment', basicAuth, bodyParser(),deleteComment);
 export { router };
