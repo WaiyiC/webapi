@@ -169,8 +169,6 @@ async function likeDogs(ctx: RouterContext, next: () => Promise<any>) {
   await next();
 }
 
-
-
 async function dislikeDogs(ctx: RouterContext, next: () => Promise<any>) {
   try {
     
@@ -210,7 +208,7 @@ async function dislikeDogs(ctx: RouterContext, next: () => Promise<any>) {
 async function userFav(ctx: RouterContext, next: any) {
   // For you TODO: add error handling and error response code
   const user = ctx.state.user;
-  const uid:number =user.user.id;
+  const uid:number =user.id;
   const result = await favs.listFav(uid);
   ctx.body = result ? result : 0;
   await next();
@@ -219,7 +217,7 @@ async function userFav(ctx: RouterContext, next: any) {
 async function postFav(ctx: RouterContext, next: any) {
   // For you TODO: add error handling and error response code
   const user = ctx.state.user;
-  const uid:number =user.user.id;
+  const uid:number =user.id;
   const id = parseInt(ctx.params.id);
   const result:any = await favs.addFav(id, uid);
   ctx.body = result.affectedRows ? {message: "added",userid:result.userid} : {message: "error"};
@@ -311,11 +309,13 @@ async function deleteComment(ctx: RouterContext, next: any) {
 
 router.get('/', getAll);
 router.post('/', basicAuth, bodyParser(), validateDog, createDog);
+router.put('/:id([0-9]{1,})', basicAuth, bodyParser(),validateDog, updateDog);
+router.delete('/:id([0-9]{1,})', basicAuth, deleteDog);
+
 router.get('/:id([0-9]{1,})', getById);
 router.get('/age/:age([0-9]{1,})', getByDog);
 router.get('/breed/:breed([a-z,A-Z]{1,})', getByDog);
-router.put('/:id([0-9]{1,})', basicAuth, bodyParser(),validateDog, updateDog);
-router.delete('/:id([0-9]{1,})', basicAuth, deleteDog);
+
 router.get('/:id([0-9]{1,})/like', likesCount);
 router.post('/:id([0-9]{1,})/likes', basicAuth, likeDogs);
 router.delete('/:id([0-9]{1,})/likes', basicAuth, dislikeDogs);
