@@ -16,7 +16,7 @@ interface Post {
   breed: string;
   age: number;
   description: string;
-  imageurl: string;
+  image: string;
   links: {
     likes: string,
     fav: string,
@@ -34,14 +34,14 @@ const {limit=100, page=1,  order="dateCreated", direction='ASC'} = ctx.request.q
   const result = await model.getAllDog(20, 1, order, direction);
    if (result.length) {
      const body: Post[] = result.map((post: any) => {
-       const { id = 0, name = "",  breed="",age = 0, imageurl = "",description="" }: Partial<Post> = post;
+       const { id = 0, name = "",  breed="",age = 0, image = "",description="" }: Partial<Post> = post;
        const links = {
          likes: `http://${ctx.host}/api/v1/dogs/${post.id}/likes`,
          fav: `http://${ctx.host}/api/v1/dogs/${post.id}/fav`,
          msg: `http://${ctx.host}/api/v1/dogs/${post.id}/msg`,
          self: `http://${ctx.host}/api/v1/dogs/${post.id}`
        };
-       return { id, name, age, breed, imageurl, description, links }; 
+       return { id, name, age, breed, image, description, links }; 
      });
   ctx.body = body;
   
@@ -330,7 +330,7 @@ const uploadImage = async (ctx: RouterContext, next: any) => {
 
   try {
     copyFileSync(file.path, filePath);
-    ctx.body = { imageurl: filePath };
+    ctx.body = { image: filePath };
   } catch (error) {
     console.error("Error uploading image:", error);
     ctx.status = 500;
