@@ -56,18 +56,17 @@ export const addDog = async(dog: any) => {
 export const updateDog = async (dog: any, id: any) => {
   let keys = Object.keys(dog);
   let values = Object.values(dog);  
-  let updateString = keys.map((key, index) => `${key}='${values[index]}'`).join(',');
+  let updateString = keys.map(key => `${key} = ?`).join(',');
 
-  let query = `UPDATE dogs SET ${updateString} WHERE ID=${id} RETURNING *;`
+  let query = `UPDATE dogs SET ${updateString} WHERE ID = ? RETURNING *;`
   try {
-    await db.run_query(query, values);
+    await db.run_query(query, [...values, id]); // Add ID to the end of the values array
     return { status: 201 };
   } catch (error) {
     console.error('Database error:', error);
     return { status: 500, error: error.message };
   }
 }
-
 export const deleteByDogId = async (id:any) => {
   let query = "Delete FROM dogs WHERE ID = ?"
   let values = [id]

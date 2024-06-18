@@ -104,20 +104,20 @@ const getByDog = async (ctx: RouterContext, next: any) => {
 };
 
 const updateDog = async (ctx: RouterContext, next: () => Promise<any>) => {
-const body = ctx.request.body;
-  const id = model.getByDogId(ctx.params.id);
+  const body = ctx.request.body;
+  const id = ctx.params.id; // Use the ID from params directly
   console.log(body, id);
-  let result = await model.updateDog(body,id);
-  if(result.status==201) {
+
+  let result = await model.updateDog(body, id); // Pass the ID directly here
+  if (result.status == 201) {
     ctx.status = 201;
     ctx.body = body;
   } else {
     ctx.status = 500;
-    ctx.body = {err: "insert data failed"};
+    ctx.body = { err: "Update data failed" };
   }
   await next();
-}
-
+};
 const deleteDog = async (ctx: RouterContext, next: any) => {
   let id = +ctx.params.id;
 
