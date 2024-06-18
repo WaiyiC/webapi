@@ -6,7 +6,9 @@ import * as favs from "../models/favs";
 import * as msgs from "../models/msgs";
 import { validateDog } from "../controllers/validation";
 import { basicAuth } from "../controllers/auth";
-
+import mime from "mime-types";
+import { copyFileSync, existsSync, createReadStream } from "fs";
+import { v4 as uuidv4 } from 'uuid';
 
 interface Post {
   id: number,
@@ -47,6 +49,7 @@ const {limit=100, page=1,  order="dateCreated", direction='ASC'} = ctx.request.q
       
    }
 }
+
 const createDog = async (ctx: RouterContext, next: any) => {
   const body = ctx.request.body;
   let result = await model.addDog(body);
@@ -100,16 +103,18 @@ const getByDog = async (ctx: RouterContext, next: any) => {
   await next();
 };
 
-const updateDog = async (ctx: RouterContext, next: any) => {
-  let id = +ctx.params.id;
-  //let {title, fullText} = ctx.request.body;
-  let c: any = ctx.request.body;
-  
-  let result = await model.updateDog(c,id)
-  if (result) {
-    ctx.status = 201
-    ctx.body = `dogs with id ${id} updated` 
-  } 
+const updateDog = async (ctx: RouterContext, next: () => Promise<any>) => {
+const body = ctx.request.body;
+  const id = model.getByDogId(ctx.params.id);
+  console.log(body, id);
+  let result = await model.updateDog(body,id);
+  if(result.status==201) {
+    ctx.status = 201;
+    ctx.body = body;
+  } else {
+    ctx.status = 500;
+    ctx.body = {err: "insert data failed"};
+  }
   await next();
 }
 
@@ -122,8 +127,6 @@ let dog:any = await model.deleteByDogId(id)
   await next();
 }
 
-
-// methods for like icon
 async function likesCount(ctx: RouterContext, next: any) {
 try {
     const id = +ctx.params.id;
@@ -171,7 +174,7 @@ async function likeDogs(ctx: RouterContext, next: () => Promise<any>) {
 
 async function dislikeDogs(ctx: RouterContext, next: () => Promise<any>) {
   try {
-    
+
     if (!ctx.isAuthenticated()) {
       ctx.status = 401;
       ctx.body = { message: "Unauthorized" };
@@ -204,7 +207,6 @@ async function dislikeDogs(ctx: RouterContext, next: () => Promise<any>) {
   await next();
 }
 
-//mehtods for Heart(Favorite) icon
 async function userFav(ctx: RouterContext, next: any) {
   // For you TODO: add error handling and error response code
   const user = ctx.state.user;
@@ -217,7 +219,7 @@ async function userFav(ctx: RouterContext, next: any) {
 async function postFav(ctx: RouterContext, next: any) {
   // For you TODO: add error handling and error response code
   const user = ctx.state.user;
-  const uid:number =user.id;
+  const uid:number =user.user.id;
   const id = parseInt(ctx.params.id);
   const result:any = await favs.addFav(id, uid);
   ctx.body = result.affectedRows ? {message: "added",userid:result.userid} : {message: "error"};
@@ -227,14 +229,13 @@ async function postFav(ctx: RouterContext, next: any) {
 async function rmFav(ctx: RouterContext, next: any) {
   // For you TODO: add error handling and error response code
   const user = ctx.state.user;
-  const uid:number =user.user.id;
+  const uid:number =user.id;
   const id = parseInt(ctx.params.id);
   const result:any = await favs.removeFav(id, uid);
   ctx.body = result.affectedRows ? {message: "removed"} : {message: "error"};
   await next();
 }
 
-//methods for message icon
 async function listMsg(ctx: RouterContext, next: any){
    const id = parseInt(ctx.params.id);
    const result = await msgs.getMsg(id);
@@ -278,6 +279,7 @@ async function addComment(ctx: RouterContext, next: () => Promise<any>) {
   }
   await next();
 }
+
 async function deleteComment(ctx: RouterContext, next: any) {
   try {
     if (!ctx.isAuthenticated()) {
@@ -306,10 +308,41 @@ async function deleteComment(ctx: RouterContext, next: any) {
   await next();
 }
 
+const uploadImage = async (ctx: RouterContext, next: any) => {
+  if (!ctx.isAuthenticated()) {
+    ctx.status = 401;
+    ctx.body = { message: "Unauthorized" };
+    return;
+  }
+
+  const user = ctx.state.user;
+  const userid: number = user.id;
+
+  const file = ctx.request.files?.image;
+  if (!file) {
+    ctx.status = 400;
+    ctx.body = { message: "No image file provided" };
+    return;
+  }
+
+  const fileName = `${uuidv4()}.${mime.extension(file.type)}`;
+  const filePath = `/path/to/upload/directory/${fileName}`;
+
+  try {
+    copyFileSync(file.path, filePath);
+    ctx.body = { imageurl: filePath };
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    ctx.status = 500;
+    ctx.body = { message: "Internal server error" };
+  }
+
+  await next();
+};
 
 router.get('/', getAll);
 router.post('/', basicAuth, bodyParser(), validateDog, createDog);
-router.put('/:id([0-9]{1,})', basicAuth, bodyParser(),validateDog, updateDog);
+router.put('/:id([0-9]{1,})', basicAuth, bodyParser(),updateDog);
 router.delete('/:id([0-9]{1,})', basicAuth, deleteDog);
 
 router.get('/:id([0-9]{1,})', getById);

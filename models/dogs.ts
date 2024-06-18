@@ -52,22 +52,19 @@ export const addDog = async(dog: any) => {
   }
 }
 
-export const updateDog = async(dog:any,id:any)  =>{  
-    
-  //console.log("article " , article)
- // console.log("id ",id)
-  let keys = Object.keys(dog)
-  let values = Object.values(dog)  
-  let updateString=""
-  for(let i: number = 0; i<values.length;i++){updateString+=keys[i]+"="+"'"+values[i]+"'"+"," }
- updateString= updateString.slice(0, -1)
- // console.log("updateString ", updateString)
+
+export const updateDog = async (dog: any, id: any) => {
+  let keys = Object.keys(dog);
+  let values = Object.values(dog);  
+  let updateString = keys.map((key, index) => `${key}='${values[index]}'`).join(',');
+
   let query = `UPDATE dogs SET ${updateString} WHERE ID=${id} RETURNING *;`
-  try{
-   await db.run_query(query, values)  
-    return {"status": 201}
-  } catch(error) {
-    return error
+  try {
+    await db.run_query(query, values);
+    return { status: 201 };
+  } catch (error) {
+    console.error('Database error:', error);
+    return { status: 500, error: error.message };
   }
 }
 

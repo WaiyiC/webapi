@@ -16,7 +16,7 @@ export const addFav = async (dogid:any, uid:any) =>{
 
 //remove a fav record
 export const removeFav = async (id:any, uid:any) =>{
-   let query = `DELETE FROM favs WHERE favs=${id} AND userid=${uid} ;`;
+   let query = `DELETE FROM favs WHERE dogid=${id} AND userid=${uid} ;`;
    try{
         await db.run_query(query, [id, uid]);  
     return { "affectedRows":1 }
