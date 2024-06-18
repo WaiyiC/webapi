@@ -219,7 +219,7 @@ async function userFav(ctx: RouterContext, next: any) {
 async function postFav(ctx: RouterContext, next: any) {
   // For you TODO: add error handling and error response code
   const user = ctx.state.user;
-  const uid:number =user.user.id;
+  const uid:number =user.id;
   const id = parseInt(ctx.params.id);
   const result:any = await favs.addFav(id, uid);
   ctx.body = result.affectedRows ? {message: "added",userid:result.userid} : {message: "error"};
